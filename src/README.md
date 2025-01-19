@@ -21,24 +21,24 @@ The Time-Based Cache is a Java implementation of an in-memory cache with the fol
 
 ### Example
 
-```java
-    TimeBasedCache<String, String> cache = new TimeBasedCache<>(5000, 3);
-    
-    // Adding entries to the cache
-    cache.put("key1", "value1", 2000);
-    cache.put("key2", "value2", 3000);
-    cache.put("key3", "value3", 4000);
-    
-    // Retrieving an entry
-    System.out.println(cache.get("key1")); // Output: "value1"
-    
-    // Adding another entry (evicts "key1" due to FIFO policy)
-    cache.put("key4", "value4", 2000);
-    System.out.println(cache.get("key1")); // Output: null
-    
-    // Wait for entries to expire
-    Thread.sleep(5000);
-    System.out.println(cache.get("key2")); // Output: null
+```java\
+TimeBasedCache<String, String> cache = new TimeBasedCache<>(5000, 3);
+
+// Adding entries to the cache
+cache.put("key1", "value1", 2000);
+cache.put("key2", "value2", 3000);
+cache.put("key3", "value3", 4000);
+
+// Retrieving an entry
+System.out.println(cache.get("key1")); // Output: "value1"
+
+// Adding another entry (evicts "key1" due to FIFO policy)
+        cache.put("key4", "value4", 2000);
+System.out.println(cache.get("key1")); // Output: null
+
+// Wait for entries to expire
+        Thread.sleep(5000);
+System.out.println(cache.get("key2")); // Output: null
 ```
 
 ## Configuration
