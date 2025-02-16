@@ -1,16 +1,18 @@
 package org.example;
 
-import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentMap;
 
 public class TimeBasedCache<K, V> {
-    private final Map<K, CacheEntry<V>> cache;
-    private final Queue<K> keyQueue;
+    private final ConcurrentMap<K, CacheEntry<V>> cache;
+    private final ConcurrentLinkedQueue<K> keyQueue;
     private final long cleanupIntervalMs;
     private final int maxSize;
 
     public TimeBasedCache(long cleanupIntervalMs, int maxSize) {
-        this.cache = new HashMap<>();
-        this.keyQueue = new LinkedList<>();
+        this.cache = new ConcurrentHashMap<>();
+        this.keyQueue = new ConcurrentLinkedQueue<>();
         this.cleanupIntervalMs = cleanupIntervalMs;
         this.maxSize = maxSize;
         startCleaner();
@@ -36,10 +38,8 @@ public class TimeBasedCache<K, V> {
     }
 
     public void remove(K key) {
-        if (cache.containsKey(key)) {
-            cache.remove(key);
-            keyQueue.remove(key);
-        }
+        cache.remove(key);
+        keyQueue.remove(key);
     }
 
     public void clear() {
@@ -54,9 +54,11 @@ public class TimeBasedCache<K, V> {
         }
     }
 
+    private volatile boolean running = true;
+
     private void startCleaner() {
         Thread cleanerThread = new Thread(() -> {
-            while (true) {
+            while (running) {
                 try {
                     Thread.sleep(cleanupIntervalMs);
                     removeExpiredEntries();
@@ -70,15 +72,17 @@ public class TimeBasedCache<K, V> {
         cleanerThread.start();
     }
 
+    public void stopCleaner() {
+        running = false;
+    }
+
     private void removeExpiredEntries() {
         long now = System.currentTimeMillis();
-        Iterator<K> iterator = keyQueue.iterator();
-        while (iterator.hasNext()) {
-            K key = iterator.next();
+        for (K key : keyQueue) {
             CacheEntry<V> entry = cache.get(key);
             if (entry != null && entry.getExpiryTime() <= now) {
-                iterator.remove();
                 cache.remove(key);
+                keyQueue.remove(key);
             }
         }
     }
@@ -120,5 +124,6 @@ public class TimeBasedCache<K, V> {
 
         Thread.sleep(3000);
         System.out.println("Get key2 after expiry: " + cache.get("key2")); // Should print "null"
+        cache.stopCleaner();
     }
 }
